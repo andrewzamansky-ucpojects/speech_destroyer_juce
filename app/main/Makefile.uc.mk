@@ -13,7 +13,6 @@ INCLUDE_THIS_COMPONENT := y
 SRC = Main.cpp
 SRC += MainComponent.cpp
 SRC += AudioComponent.cpp
-SRC += cmd_set_vbi.c
 SRC += Control_PC_App_Component.cpp
 SRC += cmd_play_file.c
 

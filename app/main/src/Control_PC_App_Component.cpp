@@ -3,7 +3,6 @@
 
 extern "C" {
 
-	void add_vbi_cmd();
 	void add_play_file_cmd();
 	extern int run_command(const char *cmd, int flag);
 
@@ -11,7 +10,6 @@ extern "C" {
 
 void AudioComponent::addControlCommands()
 {
-	add_vbi_cmd();
 	add_play_file_cmd();
 }
 
