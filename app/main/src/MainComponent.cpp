@@ -43,13 +43,17 @@ public:
 
 		setSize(300, 200);
 
+		/************start audio section  1*******************/
 		AudioComponentObj = createAudioComponent();
 		pControl_PC_App_Component_Obj = AudioComponentObj;
-		AudioComponentObj->addChangeListener(this);
+		pControl_PC_App_Component_Obj->addChangeListener(this);
 		// audio 
 		setAudioChannels(0, 2);
+		/*  end of code needed for audio*/
+		/****************end  1 *******************/
 	}
 
+	/************start audio section 2*******************/
 	/*  start of code needed for audio*/
 	~MainContentComponent()
 	{
@@ -73,6 +77,7 @@ public:
 		AudioComponentObj->releaseResources();
 	}
 	/*  end of code needed for audio*/
+	/****************end  2 *******************/
 
 
 
@@ -81,7 +86,7 @@ public:
 		if (source == AudioComponentObj)
 		{
 			String event_msg;
-			AudioComponentObj->getEvent(event_msg);
+			pControl_PC_App_Component_Obj->getEvent(event_msg);
 			if (0 == event_msg.compare("file loaded"))
 			{
 				playButton.setEnabled(true);

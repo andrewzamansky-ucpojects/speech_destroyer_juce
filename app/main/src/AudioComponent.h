@@ -34,7 +34,6 @@ class Control_PC_App_Component;//forward declaration
 
 class AudioComponent : public AudioSource,
 	public ChangeListener,
-	public ChangeBroadcaster,
 	public ControlBaseComponent,
 	private Thread
 {
@@ -94,7 +93,7 @@ public:
 	void stop();
 	void sendCommand(const char* cmd) override;
 	void addControlCommands();
-	void getEvent(String& event);
+	void getEvent(String& event) override;
 
 
 private:
