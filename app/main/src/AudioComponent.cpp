@@ -21,10 +21,11 @@ extern "C" {
 uint8_t AudioComponent::app_dev_create_signal_flow()
 {
 
-	pMain_dsp_chain = DSP_CREATE_CHAIN(18);
+	dsp_buffers_pool = memory_pool_init(20, I2S_BUFF_LEN * sizeof(float));
+	pMain_dsp_chain = DSP_CREATE_CHAIN(18 , dsp_buffers_pool);
 
 	DSP_ADD_MODULE_TO_CHAIN(pMain_dsp_chain, MIXER2X1_API_MODULE_NAME, &stereo_to_mono);
-	DSP_ADD_MODULE_TO_CHAIN(pMain_dsp_chain, VOICE_ACTIVITY_DETECTION_API_MODULE_NAME, &vad);
+	DSP_ADD_MODULE_TO_CHAIN(pMain_dsp_chain, WEBRTC_VOICE_ACTIVITY_DETECTION_API_MODULE_NAME, &vad);
 
 
 
@@ -36,7 +37,8 @@ uint8_t AudioComponent::app_dev_create_signal_flow()
 	DSP_CREATE_INTER_MODULES_LINK(&stereo_to_mono, DSP_OUTPUT_PAD_0, &vad, DSP_INPUT_PAD_0);
 
 
-	DSP_CREATE_MODULE_TO_CHAIN_OUTPUT_LINK(pMain_dsp_chain, DSP_OUTPUT_PAD_0, &vad, DSP_OUTPUT_PAD_0);
+	DSP_CREATE_MODULE_TO_CHAIN_OUTPUT_LINK(pMain_dsp_chain, DSP_OUTPUT_PAD_0, &stereo_to_mono, DSP_OUTPUT_PAD_0);
+	DSP_CREATE_MODULE_TO_CHAIN_OUTPUT_LINK(pMain_dsp_chain, DSP_OUTPUT_PAD_1, &stereo_to_mono, DSP_OUTPUT_PAD_0);
 
 	return 0;
 }
@@ -56,8 +58,6 @@ AudioComponent::AudioComponent()
 
 
 
-	dsp_buffers_pool = memory_pool_init(20, I2S_BUFF_LEN * sizeof(float));
-	dsp_management_api_set_buffers_pool(dsp_buffers_pool);
 
 	app_dev_create_signal_flow();
 
