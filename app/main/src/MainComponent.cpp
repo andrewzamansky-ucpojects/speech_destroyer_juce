@@ -18,12 +18,6 @@ public:
 	{
 
 
-		levelSlider.setRange(0.0, 0.25);
-		levelSlider.setTextBoxStyle(Slider::TextBoxRight, false, 100, 20);
-		levelLabel.setText("VB Level", dontSendNotification);
-
-		addAndMakeVisible(levelSlider);
-		addAndMakeVisible(levelLabel);
 
 		addAndMakeVisible(&openButton);
 		openButton.setButtonText("Open...");
@@ -108,8 +102,6 @@ public:
 		openButton.setBounds(10, 10, getWidth() - 20, 20);
 		playButton.setBounds(10, 40, getWidth() - 20, 20);
 		stopButton.setBounds(10, 70, getWidth() - 20, 20);
-		levelLabel.setBounds(10, 100, 90, 20);
-		levelSlider.setBounds(100, 100, getWidth() - 110, 20);
 	}
 
 	void buttonClicked(Button* button) override
@@ -194,8 +186,6 @@ private:
 	TextButton playButton;
 	TextButton stopButton;
 	Random random;
-	Slider levelSlider;
-	Label levelLabel;
 
 	TransportState state;
 	AudioComponent *AudioComponentObj;

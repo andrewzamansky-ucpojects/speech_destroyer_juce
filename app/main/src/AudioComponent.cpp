@@ -73,6 +73,13 @@ AudioComponent::AudioComponent()
 #endif
 
 
+	currNumOfWordsInIntermediateBuffer = 0;
+
+	bufferToUse = new AudioSampleBuffer(2, bufferSize);
+	localBufferToFill = new AudioSourceChannelInfo(bufferToUse, 0, bufferSize);
+
+
+
 
 	formatManager.registerBasicFormats();       // [1]
 	transportSource.addChangeListener(this);   // [2]
@@ -83,6 +90,8 @@ AudioComponent::AudioComponent()
 
 AudioComponent::~AudioComponent()
 {
+	delete localBufferToFill;
+	delete bufferToUse;
 	stopThread(1000);
 }
 
@@ -94,51 +103,65 @@ void AudioComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRat
 
 void AudioComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) 
 {
+	float* bufferToFillLeft;
+	float* bufferToFillRight;
+	float *intermediateBufferOfConstantSizeLeft;
+	float *intermediateBufferOfConstantSizeRight;
+	int bufferToFillSize;
+	int wordsToCopy;
+
 	if (readerSource == nullptr)
 	{
 		bufferToFill.clearActiveBufferRegion();
 		return;
 	}
 
-	transportSource.getNextAudioBlock(bufferToFill);
-#if 0
-	const float level = (float)levelSlider.getValue();
+	bufferToFillSize = bufferToFill.numSamples;
+	bufferToFillLeft = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
+	bufferToFillRight = bufferToFill.buffer->getWritePointer(1, bufferToFill.startSample);
 
-	for (int channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+	intermediateBufferOfConstantSizeLeft = localBufferToFill->buffer->getWritePointer(0, 0);
+	intermediateBufferOfConstantSizeRight = localBufferToFill->buffer->getWritePointer(0, 1);
+
+	while ( bufferToFillSize)
 	{
-		// Get a pointer to the start sample in the buffer for this audio output channel
-		float* const buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
 
-		// Fill the required number of samples with noise betweem -0.125 and +0.125
-		for (int sample = 0; sample < bufferToFill.numSamples; ++sample)
+		if (0 == currNumOfWordsInIntermediateBuffer)
 		{
-			const float noise = random.nextFloat() * 2.0f - 1.0f;
-			buffer[sample] += noise * level;
+			float *buffer_out1;
+			float *buffer_out2;
+
+			transportSource.getNextAudioBlock(*localBufferToFill);
+
+			buffer_out1 = (float *)malloc(bufferSize*sizeof(float));
+			buffer_out2 = (float *)malloc(bufferSize*sizeof(float));
+			DSP_SET_CHAIN_INPUT_BUFFER(pMain_dsp_chain, DSP_INPUT_PAD_0, (float*)intermediateBufferOfConstantSizeLeft);
+			DSP_SET_CHAIN_INPUT_BUFFER(pMain_dsp_chain, DSP_INPUT_PAD_1, (float*)intermediateBufferOfConstantSizeRight);
+			DSP_SET_CHAIN_OUTPUT_BUFFER(pMain_dsp_chain, DSP_OUTPUT_PAD_0, (float*)buffer_out1);
+			DSP_SET_CHAIN_OUTPUT_BUFFER(pMain_dsp_chain, DSP_OUTPUT_PAD_1, (float*)buffer_out2);
+			DSP_PROCESS_CHAIN(pMain_dsp_chain, bufferSize);
+			memcpy(intermediateBufferOfConstantSizeLeft  , buffer_out1, bufferSize * sizeof(float));
+			memcpy(intermediateBufferOfConstantSizeRight , buffer_out2, bufferSize * sizeof(float));
+			free(buffer_out1);
+			free(buffer_out2);
+			currNumOfWordsInIntermediateBuffer = bufferSize;
 		}
+
+		if (currNumOfWordsInIntermediateBuffer < bufferToFillSize)
+		{
+			wordsToCopy = currNumOfWordsInIntermediateBuffer;
+		}
+		else
+		{
+			wordsToCopy = bufferToFillSize;
+		}
+		memcpy(bufferToFillLeft, &intermediateBufferOfConstantSizeLeft[bufferSize - currNumOfWordsInIntermediateBuffer], wordsToCopy * sizeof(float));
+		memcpy(bufferToFillRight, &intermediateBufferOfConstantSizeRight[bufferSize - currNumOfWordsInIntermediateBuffer], wordsToCopy * sizeof(float));
+		bufferToFillLeft += wordsToCopy;
+		bufferToFillRight += wordsToCopy;
+		bufferToFillSize -= wordsToCopy;
+		currNumOfWordsInIntermediateBuffer -= wordsToCopy;
 	}
-#else
-	uint32_t buff_len;
-	float* buffer1 = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
-	float* buffer2 = bufferToFill.buffer->getWritePointer(1, bufferToFill.startSample);	
-	float *buffer_out1;
-	float *buffer_out2;
-	buff_len = bufferToFill.numSamples;
-
-
-	buffer_out1 = (float *)malloc(buff_len*sizeof(float));
-	buffer_out2 = (float *)malloc(buff_len*sizeof(float));
-	DSP_SET_CHAIN_INPUT_BUFFER(pMain_dsp_chain, DSP_INPUT_PAD_0, (float*)buffer1);
-	DSP_SET_CHAIN_INPUT_BUFFER(pMain_dsp_chain, DSP_INPUT_PAD_1, (float*)buffer2);
-	DSP_SET_CHAIN_OUTPUT_BUFFER(pMain_dsp_chain, DSP_OUTPUT_PAD_0, (float*)buffer_out1);
-	DSP_SET_CHAIN_OUTPUT_BUFFER(pMain_dsp_chain, DSP_OUTPUT_PAD_1, (float*)buffer_out2);
-	DSP_PROCESS_CHAIN(pMain_dsp_chain, buff_len);
-	//memcpy(buffer1, buffer_out1, buff_len*sizeof(float));  // keep the same buffer .....
-	//memcpy(buffer2, buffer_out2, buff_len*sizeof(float));
-	free(buffer_out1);
-	free(buffer_out2);
-
-#endif
-
 }
 
 void AudioComponent::releaseResources() 

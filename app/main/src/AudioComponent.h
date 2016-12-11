@@ -67,6 +67,12 @@ private:
 	//==========================================================================
 	std::queue<String> event_queue;
 
+
+	int bufferSize = 512;
+	int currNumOfWordsInIntermediateBuffer;
+	AudioSourceChannelInfo *localBufferToFill;
+	AudioSampleBuffer   	*bufferToUse;
+
 	Random random;
 	int(*callback)(int);
 	AudioFormatManager formatManager;
