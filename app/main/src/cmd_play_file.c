@@ -74,3 +74,4 @@ int add_play_file_cmd()
 	uboot_add_command(&U_BOOT_CMD_VAR_NAME(start_play));
 	return 0;
 }
+

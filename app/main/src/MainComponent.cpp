@@ -35,6 +35,9 @@ public:
 		stopButton.setColour(TextButton::buttonColourId, Colours::red);
 		stopButton.setEnabled(false);
 
+		addAndMakeVisible(&statusLabel);
+		statusLabel.setText("0",dontSendNotification);
+
 		setSize(300, 200);
 
 		/************start audio section  1*******************/
@@ -93,6 +96,18 @@ public:
 			{
 				changeState(Stopped);
 			}
+			else if (true == event_msg.startsWith("vad_result "))
+			{
+				String tmp=event_msg.substring(11,12);
+				if (0 == event_msg.substring(11,12).compare("1"))
+				{
+					statusLabel.setText("1",dontSendNotification);
+				}
+				else
+				{
+					statusLabel.setText("0",dontSendNotification);
+				}
+			}
 		}
 	}
 
@@ -102,6 +117,7 @@ public:
 		openButton.setBounds(10, 10, getWidth() - 20, 20);
 		playButton.setBounds(10, 40, getWidth() - 20, 20);
 		stopButton.setBounds(10, 70, getWidth() - 20, 20);
+		statusLabel.setBounds(10, 100, getWidth() - 20, 20);
 	}
 
 	void buttonClicked(Button* button) override
@@ -185,6 +201,7 @@ private:
 	TextButton openButton;
 	TextButton playButton;
 	TextButton stopButton;
+	Label 		statusLabel;
 	Random random;
 
 	TransportState state;

@@ -35,7 +35,7 @@ private :
 	dsp_descriptor_t stereo_to_mono;
 
 
-	void sendMessage(const char *p_str);
+	void sendMessage(String &msg);
 
 public:
 	AudioComponent();
@@ -58,6 +58,8 @@ public:
 	void stop();
 	void sendCommand(const char* cmd) override;
 	void addControlCommands();
+	void deleteControlCommands();
+
 	void getEvent(String& event) override;
 
 
@@ -68,7 +70,7 @@ private:
 	std::queue<String> event_queue;
 
 
-	int bufferSize = 512;
+	int bufferSize = 480;//512;
 	int currNumOfWordsInIntermediateBuffer;
 	AudioSourceChannelInfo *localBufferToFill;
 	AudioSampleBuffer   	*bufferToUse;

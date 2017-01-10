@@ -48,7 +48,6 @@ uint8_t AudioComponent::app_dev_create_signal_flow()
 AudioComponent::AudioComponent() 
  : Thread("Background Thread")
 {
-
 	set_channel_weight_t ch_weight;
 
 	addControlCommands();
@@ -61,7 +60,6 @@ AudioComponent::AudioComponent()
 
 	app_dev_create_signal_flow();
 
-#if 1
 	/**************   LPF path  *************/
 	ch_weight.weight = 0.5;
 	ch_weight.channel_num = 0;
@@ -69,9 +67,6 @@ AudioComponent::AudioComponent()
 	ch_weight.channel_num = 1;
 	DSP_IOCTL_1_PARAMS(&stereo_to_mono, IOCTL_MIXER_SET_CHANNEL_WEIGHT, &ch_weight);
 	//			dsp_management_api_set_module_control(&stereo_to_mono , DSP_MANAGEMENT_API_MODULE_CONTROL_BYPASS);
-
-#endif
-
 
 	currNumOfWordsInIntermediateBuffer = 0;
 
@@ -85,14 +80,17 @@ AudioComponent::AudioComponent()
 	transportSource.addChangeListener(this);   // [2]
 
 	startThread();
-
 }
 
 AudioComponent::~AudioComponent()
 {
+	stopThread(1000);
 	delete localBufferToFill;
 	delete bufferToUse;
-	stopThread(1000);
+	DSP_DELETE_CHAIN(pMain_dsp_chain);
+	memory_pool_delete(dsp_buffers_pool);
+	DSP_DELETE_MODULES();
+	deleteControlCommands();
 }
 
 void AudioComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate) 
@@ -177,18 +175,18 @@ void AudioComponent::changeListenerCallback(ChangeBroadcaster* source)
 
 	if (transportSource.isPlaying())
 	{
-		sendMessage("file is playing");
+		msg="file is playing";
 	}
 	else
 	{
-		sendMessage("file is stopped");
+		msg="file is stopped";
 	}
+	sendMessage(msg);
 }
 
 
-void  AudioComponent::sendMessage(const char *p_str)
+void  AudioComponent::sendMessage(String &msg)
 {
-	String msg(p_str);
 	event_queue.push(msg);
 }
 
@@ -210,10 +208,11 @@ int AudioComponent::setPlayFile(File &file)
 
 	if (reader != nullptr)
 	{
+		String msg("file loaded");
 		ScopedPointer<AudioFormatReaderSource> newSource = new AudioFormatReaderSource(reader, true);
 		transportSource.setSource(newSource, 0, nullptr, reader->sampleRate);
 		readerSource = newSource.release();
-		sendMessage("file loaded");
+		sendMessage(msg);
 		return 0;
 	}
 	return 1;
@@ -247,7 +246,16 @@ void AudioComponent::run()
 		{
 			sendChangeMessage();
 		}
-		wait(500);
+		else
+		{
+			String msg("vad_result ");
+			float vad_result;
+			DSP_IOCTL_1_PARAMS(&vad , IOCTL_WEBRTC_VOICE_ACTIVITY_DETECTION_GET_RESULT , &vad_result );
+			msg +=String(vad_result);
+			sendMessage(msg);
+
+		}
+		wait(100);
 	}
 }
 
