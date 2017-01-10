@@ -5,6 +5,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 extern "C" {
+	#include "auto_init_api.h"
 	#include "memory_pool_api.h"
 	#include "dev_management_api.h"
 	#include "dsp_management_api.h"
@@ -12,8 +13,6 @@ extern "C" {
 	#include "mixer2x1_api.h"
 	#include "webrtc_voice_activity_detection_api.h"
 
-	void mixer2x1_init();
-	void webrtc_voice_activity_detection_init();
 	extern int run_command(const char *cmd, int flag);
 
 }

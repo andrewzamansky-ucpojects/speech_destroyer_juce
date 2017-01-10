@@ -50,13 +50,9 @@ AudioComponent::AudioComponent()
 {
 	set_channel_weight_t ch_weight;
 
+	auto_init_api();
+
 	addControlCommands();
-
-	mixer2x1_init();
-	webrtc_voice_activity_detection_init();
-
-
-
 
 	app_dev_create_signal_flow();
 
@@ -89,8 +85,8 @@ AudioComponent::~AudioComponent()
 	delete bufferToUse;
 	DSP_DELETE_CHAIN(pMain_dsp_chain);
 	memory_pool_delete(dsp_buffers_pool);
-	DSP_DELETE_MODULES();
 	deleteControlCommands();
+	DSP_DELETE_MODULES();
 }
 
 void AudioComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate) 
