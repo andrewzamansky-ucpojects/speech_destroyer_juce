@@ -7,3 +7,5 @@ zOUT
 zOUT_history
 *.bak
 *.old
+.vs/
+x64/

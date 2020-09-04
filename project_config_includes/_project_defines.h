@@ -13,6 +13,8 @@
 
 #include "project_config.h"
 #include <stddef.h> // include for NULL
+#include <stdio.h>
+#include <stdlib.h>
 
 
 #ifdef __cplusplus
@@ -50,10 +52,8 @@
 
 
 
-void throw_critical_error_exception (char *err_str);
+#define CRITICAL_ERROR(err_message)   \
+				{printf(err_message); exit(1);}
 
-#define CRITICAL_ERROR(err_message)		{throw_critical_error_exception(err_message);}
 
-/***********************************/
-
-#endif /* */
+#endif
