@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="NewProject\Source">
-      <UniqueIdentifier>{CBA2DCCD-1D2C-5CB2-5048-C7D8353D0443}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="NewProject">
-      <UniqueIdentifier>{CB74BE48-DB7F-3C97-627C-DABC57896C4C}</UniqueIdentifier>
-    </Filter>
     <Filter Include="JUCE Modules\juce_audio_basics\audio_play_head">
       <UniqueIdentifier>{EB58F05A-A968-CEBE-40C4-107CDD8F240F}</UniqueIdentifier>
     </Filter>
@@ -418,13 +412,19 @@
     <Filter Include="JUCE Library Code">
       <UniqueIdentifier>{7ED5A90E-41AF-A1EF-659B-37CEEAB9BA61}</UniqueIdentifier>
     </Filter>
+    <Filter Include="NuAEC_RNN">
+      <UniqueIdentifier>{CB74BE48-DB7F-3C97-627C-DABC57896C4C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NuAEC_RNN\Source">
+      <UniqueIdentifier>{CBA2DCCD-1D2C-5CB2-5048-C7D8353D0443}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main.cpp">
-      <Filter>NewProject\Source</Filter>
+      <Filter>NuAEC_RNN\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\MainComponent.cpp">
-      <Filter>NewProject\Source</Filter>
+      <Filter>NuAEC_RNN\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\uCWorkspace\external_source\JUCE\JUCE_repo\modules\juce_audio_basics\buffers\juce_AudioChannelSet.cpp">
       <Filter>JUCE Modules\juce_audio_basics\buffers</Filter>
@@ -2328,7 +2328,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\MainComponent.h">
-      <Filter>NewProject\Source</Filter>
+      <Filter>NuAEC_RNN\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\uCWorkspace\external_source\JUCE\JUCE_repo\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.h">
       <Filter>JUCE Modules\juce_audio_basics\audio_play_head</Filter>
@@ -4496,6 +4496,7 @@
     <ClInclude Include="..\..\JuceLibraryCode\JuceHeader.h">
       <Filter>JUCE Library Code</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\..\uCWorkspace\external_source\JUCE\JUCE_repo\modules\juce_audio_devices\native\oboe\CMakeLists.txt">
