@@ -14,6 +14,9 @@ INCLUDE_THIS_COMPONENT := y
 SRC += NuAEC_RNN_juce_generated/Source/Main.cpp
 SRC += NuAEC_RNN_juce_generated/Source/MainComponent.cpp
 SRC += NuAEC_RNN_juce_generated/Source/audio.cpp
+SRC += NuAEC_RNN_juce_generated/Source/PlaybackGui.cpp
+
+SRC += src/audio_topologies/NuAEC_rnn_chain.c
 #SRC += AudioComponent.cpp
 #SRC += Control_PC_App_Component.cpp
 #SRC += cmd_play_file.c

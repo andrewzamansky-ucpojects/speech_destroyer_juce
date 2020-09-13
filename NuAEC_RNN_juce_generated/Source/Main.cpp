@@ -108,6 +108,31 @@ private:
 	std::unique_ptr<MainWindow> mainWindow;
 };
 
+
+
+static void critical_error(char *file_str, int line_num, char *msg)
+{
+	String err_title("critical_error");
+	String err_msg("");
+	err_msg += "file: ";
+	err_msg += file_str;
+	err_msg += ": line(";
+	err_msg += line_num;
+	err_msg += ").\n";
+	err_msg += msg;
+	AlertWindow alert_win(err_title, err_msg, AlertWindow::NoIcon);
+	alert_win.addButton(String("OK"), 0);
+	alert_win.runModalLoop();
+}
+extern "C" {
+	void c_critical_error(char *file_str, int line_num, char *msg)
+	{
+		critical_error(file_str, line_num, msg);
+		exit(1);
+	}
+}
+
+
 //==============================================================================
 // This macro generates the main() routine that launches the app.
 START_JUCE_APPLICATION (NuAEC_RNNApplication)

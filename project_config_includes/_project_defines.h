@@ -51,9 +51,15 @@
 /***********************************/
 
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
+	void c_critical_error(char *file_str, int line_num, char *msg);
+#ifdef __cplusplus
+}
+#endif
 #define CRITICAL_ERROR(err_message)   \
-				{printf(err_message); exit(1);}
+		c_critical_error(__FILE__, __LINE__, err_message)
 
 
 #endif
