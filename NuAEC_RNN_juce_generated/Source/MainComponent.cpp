@@ -18,6 +18,7 @@ MainComponent::MainComponent(): audioSetupComp (deviceManager,
 
 	addAndMakeVisible(audioSetupComp);
 	addAndMakeVisible(playbackGui);
+	addAndMakeVisible(recordGui);
 
 	addAndMakeVisible(enable_process_btn);
 	enable_process_btn.setButtonText("process audio in AEC+RNNoise");
@@ -100,7 +101,8 @@ void MainComponent::resized()
 	int ctl_win_height;
 	int control_height;
 
-	num_of_control_rows = 1 + playbackGui.num_of_control_rows;
+	num_of_control_rows = 1 + playbackGui.num_of_control_rows +
+			 + recordGui.num_of_control_rows;
 
 	auto ctl_rect = rect.removeFromLeft(proportionOfWidth (0.6f));
 	auto audio_setup_rect = ctl_rect.removeFromTop(AUDIO_COMP_HEIGHT);
@@ -113,6 +115,10 @@ void MainComponent::resized()
 	control_height = (playbackGui.num_of_control_rows * ctl_win_height) /
 														num_of_control_rows;
 	playbackGui.setBounds(ctl_rect.removeFromTop(control_height));
+
+	control_height = (recordGui.num_of_control_rows * ctl_win_height) /
+														num_of_control_rows;
+	recordGui.setBounds(ctl_rect.removeFromTop(control_height));
 
 	rect.reduce (10, 10);
 	auto topLine (rect.removeFromTop (20));
@@ -139,12 +145,12 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
 
 #define SMOOTHING_ALPHA_RAISING  0.1f
 #define SMOOTHING_ALPHA_FALLING  0.01f
-static float smoothed_cpu_usage = 0.0f;
+static double smoothed_cpu_usage = 0.0f;
 
 void MainComponent::timerCallback()
 {
-	float alpha;
-	float cpu = deviceManager.getCpuUsage() * 100;
+	double alpha;
+	double cpu = deviceManager.getCpuUsage() * 100;
 
 	if (smoothed_cpu_usage < cpu)
 	{
@@ -158,6 +164,9 @@ void MainComponent::timerCallback()
 	smoothed_cpu_usage = (alpha * cpu) + ((1.0f - alpha) * smoothed_cpu_usage);
 	cpuUsageText.setText(
 		juce::String(smoothed_cpu_usage, 6) + " %", juce::dontSendNotification);
+
+	recordGui.update_rec_elapsed(curr_rec_duration_ms);
+
 }
 
 void MainComponent::dumpDeviceInfo()

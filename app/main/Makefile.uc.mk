@@ -15,6 +15,7 @@ SRC += NuAEC_RNN_juce_generated/Source/Main.cpp
 SRC += NuAEC_RNN_juce_generated/Source/MainComponent.cpp
 SRC += NuAEC_RNN_juce_generated/Source/audio.cpp
 SRC += NuAEC_RNN_juce_generated/Source/PlaybackGui.cpp
+SRC += NuAEC_RNN_juce_generated/Source/RecordGui.cpp
 
 SRC += src/audio_topologies/NuAEC_rnn_chain.c
 #SRC += AudioComponent.cpp

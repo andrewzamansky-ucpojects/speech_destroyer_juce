@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "PlaybackGui.h"
+#include "RecordGui.h"
 
 //==============================================================================
 /*
@@ -29,7 +30,9 @@ public:
 	void paint (juce::Graphics& g) override;
 
 	void resized() override;
-	void changeState(enum playback_transport_state_e new_state);
+	void change_playback_state(enum playback_transport_state_e new_state);
+	void change_recording_state(
+			enum record_transport_state_e new_state, int duration_ms);
 
 
 private:
@@ -57,6 +60,9 @@ private:
 	void playback_transport_changed();
 	void init_audio();
 	void free_audio();
+	void init_playback();
+	void init_recorder();
+	void do_record();
 
 	//==========================================================================
 	juce::Random random;
@@ -66,12 +72,16 @@ private:
 	juce::TextEditor diagnosticsBox;
 	juce::ToggleButton enable_process_btn;
 	PlaybackGui playbackGui;
+	RecordGui recordGui;
 
 	uint8_t enable_audio_process = 0;
 	juce::AudioFormatManager formatManager;
 	std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
 	juce::AudioTransportSource transportSource;
-	enum playback_transport_state_e state;
+	enum playback_transport_state_e playback_state;
+	enum record_transport_state_e record_state;
+	int curr_rec_duration_ms = 0;
+	int max_rec_duration_ms = 0;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

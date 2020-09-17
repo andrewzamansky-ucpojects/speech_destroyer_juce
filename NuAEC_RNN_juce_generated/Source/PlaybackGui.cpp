@@ -100,10 +100,10 @@ void PlaybackGui::changeState(enum playback_transport_state_e new_state)
 
 void PlaybackGui::playButtonClicked()
 {
-	mainComponent->changeState(PLAYBACK_STARTING);
+	mainComponent->change_playback_state(PLAYBACK_STARTING);
 }
 
 void PlaybackGui::stopButtonClicked()
 {
-	mainComponent->changeState(PLAYBACK_STOPPING);
+	mainComponent->change_playback_state(PLAYBACK_STOPPING);
 }

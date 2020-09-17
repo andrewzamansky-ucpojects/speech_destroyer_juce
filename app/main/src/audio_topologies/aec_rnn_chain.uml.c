@@ -14,7 +14,7 @@ static struct static_dsp_component_t chain[] = {
 	SET_INPUTS( IN0(chain_inputs, 0), IN1(chain_inputs, 1),
 				IN2(chain_inputs, 2), IN3(chain_inputs, 3)) },
 { rnn_right, RNN_DSPT ,
-	SET_INPUTS( IN0(nuvoton_aec, 1) ) },
+	SET_INPUTS( IN0(nuvoton_aec, 0) ) },
 	{ rnn_gain, MULTIPLIER_1CH_DSPT ,
 		SET_INPUTS( IN0(rnn_right, 0) ) },
 { passthrough_gain, MULTIPLIER_1CH_DSPT ,
