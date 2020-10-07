@@ -40,7 +40,7 @@ void init_chain()
 
 	pMain_dsp_chain = DSP_MANAGEMENT_API_CREATE_STATIC_CHAIN(chain);
 
-	gain = 12.0f; // 0 - no gain
+	gain = 6.0f; // 0 - no gain
 	dsp_management_api_ioctl_1_params(pMain_dsp_chain, rnn_gain,
 			IOCTL_MULTIPLIER_SET_WEIGHT_DB, &gain );
 

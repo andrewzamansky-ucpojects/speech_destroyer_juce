@@ -45,6 +45,12 @@ static void record_stop();
 
 uint8_t MainComponent::num_of_objects = 0;
 
+#define ZERO_BUFF_SIZE_FOR_DSP_CHAIN  (DSP_BUFF_SIZE * 8)
+#define DUMMY_BUFF_SIZE_FOR_DSP_CHAIN  (DSP_BUFF_SIZE * 8)
+
+uint8_t zero_buff_for_DSP_chain[ZERO_BUFF_SIZE_FOR_DSP_CHAIN];
+uint8_t dummy_buff_for_DSP_chain[DUMMY_BUFF_SIZE_FOR_DSP_CHAIN];
+
 
 void MainComponent::init_playback()
 {
@@ -115,7 +121,9 @@ void MainComponent::init_audio()
 	init_playback();
 	init_recorder();
 
-	dsp_management_api_init(DSP_BUFF_SIZE);
+	dsp_management_api_init(
+			zero_buff_for_DSP_chain, ZERO_BUFF_SIZE_FOR_DSP_CHAIN,
+			dummy_buff_for_DSP_chain, DUMMY_BUFF_SIZE_FOR_DSP_CHAIN);
 	init_chain();
 	if (num_of_objects) // trying to create more then 1 objects
 	{
@@ -130,10 +138,12 @@ void MainComponent::init_audio()
 void MainComponent::free_audio()
 {
 	transportSource.releaseResources();
+#if 0 // remove releasing of audio because change of sample rate or buffer
+	  // size in GUI will call this function
 	free(zero_buff);
 	dsp_management_api_delete_chain(pMain_dsp_chain);
 	dsp_management_api_delete();
-
+#endif
 	threadedWriter.reset();
 
 //	if (nullptr != threadedWriter.get())
@@ -470,18 +480,18 @@ void MainComponent::getNextAudioBlock(
 	if (0 == data_is_valid_for_proccessing) return;
 #if 1
 
-	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain,
-			IN_PAD(0), (uint8_t *)mic_buff_left, DSP_BUFF_SIZE);
-	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain,
-			IN_PAD(1), (uint8_t *)mic_buff_right, DSP_BUFF_SIZE);
-	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain,
-			IN_PAD(2), (uint8_t *)playback_buff_left, DSP_BUFF_SIZE);
-	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain,
-			IN_PAD(3), (uint8_t *)playback_buff_right, DSP_BUFF_SIZE);
-	dsp_management_api_set_chain_output_buffer(pMain_dsp_chain,
-			OUT_PAD(0), (uint8_t *)output_buff_left, DSP_BUFF_SIZE);
-	dsp_management_api_set_chain_output_buffer(pMain_dsp_chain,
-			OUT_PAD(1), (uint8_t *)output_buff_right, DSP_BUFF_SIZE);
+	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(0),
+					(uint8_t *)mic_buff_left, DSP_BUFF_SIZE * sizeof(float));
+	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(1),
+					(uint8_t *)mic_buff_right, DSP_BUFF_SIZE * sizeof(float));
+	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(2),
+				(uint8_t *)playback_buff_left, DSP_BUFF_SIZE * sizeof(float));
+	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(3),
+				(uint8_t *)playback_buff_right, DSP_BUFF_SIZE * sizeof(float));
+	dsp_management_api_set_chain_output_buffer(pMain_dsp_chain, OUT_PAD(0),
+				(uint8_t *)output_buff_left, DSP_BUFF_SIZE * sizeof(float));
+	dsp_management_api_set_chain_output_buffer(pMain_dsp_chain, OUT_PAD(1),
+				(uint8_t *)output_buff_right, DSP_BUFF_SIZE * sizeof(float));
 	dsp_management_api_process_chain(pMain_dsp_chain);
 #endif
 	do_record();
