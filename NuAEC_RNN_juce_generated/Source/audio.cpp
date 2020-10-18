@@ -9,48 +9,15 @@ extern "C" {
 
 }
 
-// length should be (buff_size_of_DSP_chain * const)
-#define DSP_BUFF_SIZE  512
-#define CYCLIC_BUFF_SIZE  (DSP_BUFF_SIZE * 7)
-
-static float mic_buff_left_cyclic[CYCLIC_BUFF_SIZE];
-static float mic_buff_right_cyclic[CYCLIC_BUFF_SIZE];
-static float playback_buff_left_cyclic[CYCLIC_BUFF_SIZE];
-static float playback_buff_right_cyclic[CYCLIC_BUFF_SIZE];
-
-static float mic_buff_left_x3[DSP_BUFF_SIZE * 3];
-static float mic_buff_right_x3[DSP_BUFF_SIZE * 3];
-static float playback_buff_left_x3[DSP_BUFF_SIZE * 3];
-static float playback_buff_right_x3[DSP_BUFF_SIZE * 3];
-
-static float mic_buff_left[DSP_BUFF_SIZE];
-static float mic_buff_right[DSP_BUFF_SIZE];
-static float playback_buff_left[DSP_BUFF_SIZE];
-static float playback_buff_right[DSP_BUFF_SIZE];
-
-static float output_buff_left[DSP_BUFF_SIZE];
-static float output_buff_right[DSP_BUFF_SIZE];
-
-static size_t in_audio_write_pointer = 0;
-static size_t in_audio_read_pointer = 0;
-static size_t valid_data_in_input_buffer = 0;
 
 static size_t zero_buff_size = 0;
 static float *zero_buff = NULL;
 
 static uint8_t error_state = 0;
 
-static void downsampling();
 static void record_stop();
 
 uint8_t MainComponent::num_of_objects = 0;
-
-#define ZERO_BUFF_SIZE_FOR_DSP_CHAIN  (DSP_BUFF_SIZE * 8)
-#define DUMMY_BUFF_SIZE_FOR_DSP_CHAIN  (DSP_BUFF_SIZE * 8)
-
-uint8_t zero_buff_for_DSP_chain[ZERO_BUFF_SIZE_FOR_DSP_CHAIN];
-uint8_t dummy_buff_for_DSP_chain[DUMMY_BUFF_SIZE_FOR_DSP_CHAIN];
-
 
 void MainComponent::init_playback()
 {
@@ -85,7 +52,6 @@ void MainComponent::init_playback()
 }
 
 
-#define RECORDER_SAMPLE_RATE  16000
 #define RECORDER_CHANNEL_NUM  2
 #define RECORDER_WORD_SIZE    16
 
@@ -121,10 +87,7 @@ void MainComponent::init_audio()
 	init_playback();
 	init_recorder();
 
-	dsp_management_api_init(
-			zero_buff_for_DSP_chain, ZERO_BUFF_SIZE_FOR_DSP_CHAIN,
-			dummy_buff_for_DSP_chain, DUMMY_BUFF_SIZE_FOR_DSP_CHAIN);
-	init_chain();
+	init_audio_processing();
 	if (num_of_objects) // trying to create more then 1 objects
 	{
 		CRITICAL_ERROR("only one object can exist");
@@ -260,7 +223,7 @@ void get_output_buffer_pointers(AudioDeviceManager *deviceManager,
 }
 
 
-void add_new_input_buffers(size_t num_of_samples,
+void MainComponent::add_new_input_buffers(size_t num_of_samples,
 		const float *new_buf_left, const float *new_buf_right,
 		uint8_t updating_playback_buffers)
 {
@@ -328,84 +291,11 @@ void add_new_input_buffers(size_t num_of_samples,
 }
 
 
-uint8_t get_buffers_for_processing()
-{
-	size_t samples_to_copy;
-	size_t curr_samples_to_copy;
-	size_t curr_dest_buff_pos;
 
-	samples_to_copy = DSP_BUFF_SIZE * 3;
-	if (samples_to_copy > valid_data_in_input_buffer)
-	{
-		return 0;// not enough data in buffer
-	}
-
-	curr_dest_buff_pos = 0;
-	while (samples_to_copy)
-	{
-		if (in_audio_write_pointer >= in_audio_read_pointer)
-		{
-			curr_samples_to_copy =
-					in_audio_write_pointer - in_audio_read_pointer;
-		}
-		else
-		{
-			curr_samples_to_copy = CYCLIC_BUFF_SIZE - in_audio_read_pointer;
-		}
-
-		if (curr_samples_to_copy > valid_data_in_input_buffer)
-		{
-			curr_samples_to_copy = valid_data_in_input_buffer;
-		}
-		if (curr_samples_to_copy > samples_to_copy)
-		{
-			curr_samples_to_copy = samples_to_copy;
-		}
-
-		memcpy(&mic_buff_left_x3[curr_dest_buff_pos],
-				&mic_buff_left_cyclic[in_audio_read_pointer],
-				curr_samples_to_copy * sizeof(float));
-		memcpy(&mic_buff_right_x3[curr_dest_buff_pos],
-				&mic_buff_right_cyclic[in_audio_read_pointer],
-				curr_samples_to_copy * sizeof(float));
-		memcpy(&playback_buff_left_x3[curr_dest_buff_pos],
-				&playback_buff_left_cyclic[in_audio_read_pointer],
-				curr_samples_to_copy * sizeof(float));
-		memcpy(&playback_buff_right_x3[curr_dest_buff_pos],
-				&playback_buff_right_cyclic[in_audio_read_pointer],
-				curr_samples_to_copy * sizeof(float));
-
-		in_audio_read_pointer =
-			(in_audio_read_pointer + curr_samples_to_copy) % CYCLIC_BUFF_SIZE;
-		curr_dest_buff_pos += curr_samples_to_copy;
-		valid_data_in_input_buffer -= curr_samples_to_copy;
-		samples_to_copy -= curr_samples_to_copy;
-	}
-
-	downsampling();
-	return 1;
-}
-
-
-// TODO: add correct downsampling
-static void downsampling()
-{
-	size_t i;
-
-	for(i = 0; i < DSP_BUFF_SIZE; i++)
-	{
-		mic_buff_left[i] = mic_buff_left_x3[i * 3];
-		mic_buff_right[i] = mic_buff_right_x3[i * 3];
-		playback_buff_left[i] = playback_buff_left_x3[i * 3];
-		playback_buff_right[i] = playback_buff_right_x3[i * 3];
-	}
-}
-
-
-void MainComponent::do_record()
+void MainComponent::do_record(float *left_buff_to_record,
+			float *right_buff_to_record, size_t samples_to_record)
 {
     const ScopedLock sl (writerLock);
-	int record_sample_rate = 16000;
 	float *data_to_record[2];
 
 	if ((RECORD_RECORDING != record_state) ||
@@ -414,15 +304,15 @@ void MainComponent::do_record()
 		return;
 	}
 
-	data_to_record[0] = output_buff_left;
-	data_to_record[1] = output_buff_right;
+	data_to_record[0] = left_buff_to_record;
+	data_to_record[1] = right_buff_to_record;
     if (activeWriter.load() != nullptr)
     {
-        activeWriter.load()->write (data_to_record, DSP_BUFF_SIZE);
+        activeWriter.load()->write (data_to_record, samples_to_record);
     }
 
 	curr_rec_duration_ms +=
-			(int) (DSP_BUFF_SIZE * 1000) / record_sample_rate;
+			(int) (samples_to_record * 1000) / record_sample_rate;
 
 	if (curr_rec_duration_ms >= max_rec_duration_ms)
 	{
@@ -432,6 +322,8 @@ void MainComponent::do_record()
 }
 
 
+extern void process_audio(const juce::AudioSourceChannelInfo& bufferToFill);
+
 void MainComponent::getNextAudioBlock(
 		const juce::AudioSourceChannelInfo& bufferToFill)
 {
@@ -439,8 +331,10 @@ void MainComponent::getNextAudioBlock(
 	const float *new_mic_right;
 	float *new_playback_left;
 	float *new_playback_right;
-	uint8_t data_is_valid_for_proccessing;
 	size_t num_of_samples;
+	float *left_buff_to_record;
+	float *right_buff_to_record;
+	size_t samples_to_record;
 	double sample_rate;
 	auto* device = deviceManager.getCurrentAudioDevice();
 
@@ -474,27 +368,9 @@ void MainComponent::getNextAudioBlock(
 								&new_playback_left, &new_playback_right);
 	add_new_input_buffers(
 			num_of_samples, new_playback_left, new_playback_right, 1);
-
-	data_is_valid_for_proccessing = get_buffers_for_processing();
-
-	if (0 == data_is_valid_for_proccessing) return;
-#if 1
-
-	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(0),
-					(uint8_t *)mic_buff_left, DSP_BUFF_SIZE * sizeof(float));
-	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(1),
-					(uint8_t *)mic_buff_right, DSP_BUFF_SIZE * sizeof(float));
-	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(2),
-				(uint8_t *)playback_buff_left, DSP_BUFF_SIZE * sizeof(float));
-	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(3),
-				(uint8_t *)playback_buff_right, DSP_BUFF_SIZE * sizeof(float));
-	dsp_management_api_set_chain_output_buffer(pMain_dsp_chain, OUT_PAD(0),
-				(uint8_t *)output_buff_left, DSP_BUFF_SIZE * sizeof(float));
-	dsp_management_api_set_chain_output_buffer(pMain_dsp_chain, OUT_PAD(1),
-				(uint8_t *)output_buff_right, DSP_BUFF_SIZE * sizeof(float));
-	dsp_management_api_process_chain(pMain_dsp_chain);
-#endif
-	do_record();
+	process_audio(
+			&left_buff_to_record, &right_buff_to_record, &samples_to_record);
+	do_record(left_buff_to_record, right_buff_to_record, samples_to_record);
 }
 
 
@@ -531,7 +407,7 @@ void MainComponent::change_playback_state(
 }
 
 
-static int record_start(RecordGui &recordGui)
+int MainComponent::record_start()
 {
 	WavAudioFormat wavFormat;
 	record_audio_file.deleteFile();
@@ -547,7 +423,7 @@ static int record_start(RecordGui &recordGui)
 
 
 	wav_writer = wavFormat.createWriterFor(
-			fileStream.get(), RECORDER_SAMPLE_RATE, RECORDER_CHANNEL_NUM,
+			fileStream.get(), record_sample_rate, RECORDER_CHANNEL_NUM,
 			RECORDER_WORD_SIZE, {}, 0);
 
 	if (nullptr == wav_writer)
@@ -614,7 +490,7 @@ void MainComponent::change_recording_state(
 //		break;
 //
 	case RECORD_STARTING:
-		if (0 == record_start(recordGui))
+		if (0 == record_start())
 		{
 			curr_rec_duration_ms = 0;
 			max_rec_duration_ms = duration_ms;

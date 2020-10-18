@@ -62,7 +62,17 @@ private:
 	void free_audio();
 	void init_playback();
 	void init_recorder();
-	void do_record();
+	void do_record(float *left_buff_to_record,
+			float *right_buff_to_record, size_t samples_to_record);
+	void process_audio(
+			float **left_buff_to_record, float **right_buff_to_record,
+			size_t *samples_to_record);
+	void add_new_input_buffers(size_t num_of_samples,
+			const float *new_buf_left, const float *new_buf_right,
+			uint8_t updating_playback_buffers);
+	uint8_t get_buffers_for_processing();
+	void  init_audio_processing();
+	int record_start();
 
 	//==========================================================================
 	juce::Random random;
@@ -82,6 +92,21 @@ private:
 	enum record_transport_state_e record_state;
 	int curr_rec_duration_ms = 0;
 	int max_rec_duration_ms = 0;
+
+	size_t in_audio_write_pointer = 0;
+	size_t in_audio_read_pointer = 0;
+	size_t valid_data_in_input_buffer = 0;
+
+	// length should be (buff_size_of_DSP_chain * const)
+	#define DSP_BUFF_SIZE  512
+	#define CYCLIC_BUFF_SIZE  (DSP_BUFF_SIZE * 7)
+
+	float mic_buff_left_cyclic[CYCLIC_BUFF_SIZE];
+	float mic_buff_right_cyclic[CYCLIC_BUFF_SIZE];
+	float playback_buff_left_cyclic[CYCLIC_BUFF_SIZE];
+	float playback_buff_right_cyclic[CYCLIC_BUFF_SIZE];
+
+	int record_sample_rate = 16000;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
