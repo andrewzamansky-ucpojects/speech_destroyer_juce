@@ -17,8 +17,13 @@ SRC += NuAEC_RNN_juce_generated/Source/audio.cpp
 SRC += NuAEC_RNN_juce_generated/Source/PlaybackGui.cpp
 SRC += NuAEC_RNN_juce_generated/Source/RecordGui.cpp
 
+## open for NuAEC+RNN:
 SRC += src/audio_topologies/NuAEC_rnn_chain.c
 SRC += src/rnn_aec_audio_processing.cpp
+
+## open for FIR filter test:
+#SRC += src/audio_topologies/fir_chain.c
+#SRC += src/fir_audio_processing.cpp
 
 SPEED_CRITICAL_FILES +=
 

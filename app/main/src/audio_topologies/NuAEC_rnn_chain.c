@@ -29,7 +29,7 @@
 #include "nuvoton_aec_api.h"
 
 
-#include  "aec_rnn_chain.uml.c"
+#include  "NuAEC_rnn_chain.uml.c"
 
 #define DMIC_BYTES_PER_PCM_CHANNEL  4
 struct dsp_chain_t *pMain_dsp_chain;
