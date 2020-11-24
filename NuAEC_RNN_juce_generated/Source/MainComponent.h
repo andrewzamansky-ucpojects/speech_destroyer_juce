@@ -98,7 +98,7 @@ private:
 	size_t valid_data_in_input_buffer = 0;
 
 	// length should be (buff_size_of_DSP_chain * const)
-	#define DSP_BUFF_SIZE  512
+	#define DSP_BUFF_SIZE  (3*512)
 	#define CYCLIC_BUFF_SIZE  (DSP_BUFF_SIZE * 7)
 
 	float mic_buff_left_cyclic[CYCLIC_BUFF_SIZE];

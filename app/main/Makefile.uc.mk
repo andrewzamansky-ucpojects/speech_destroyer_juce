@@ -25,6 +25,10 @@ SRC += src/rnn_aec_audio_processing.cpp
 #SRC += src/audio_topologies/fir_chain.c
 #SRC += src/fir_audio_processing.cpp
 
+## open for FIR filter test:
+#SRC += src/audio_topologies/downsample_chain.c
+#SRC += src/downsample_audio_processing.cpp
+
 SPEED_CRITICAL_FILES +=
 
 VPATH += | $(APP_ROOT_DIR)

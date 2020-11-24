@@ -22,9 +22,9 @@ uint8_t MainComponent::num_of_objects = 0;
 void MainComponent::init_playback()
 {
 	static AudioFormatReader* audio_format_reader;
-	String playback_file_name("C:\\Work\\audio_files\\chirp.wav");
-//	String playback_file_name("C:\\Work\\audio_files\\"
-//		"Eagles_-_Hotel_California_Lyrics[ListenVid.com].wav");
+//	String playback_file_name("C:\\Work\\audio_files\\chirp.wav");
+	String playback_file_name("C:\\Work\\audio_files\\"
+		"Eagles_-_Hotel_California_Lyrics[ListenVid.com].wav");
 	File audio_file(playback_file_name);
 
 	playbackGui.set_main_component(this);

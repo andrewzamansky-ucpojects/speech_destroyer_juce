@@ -35,7 +35,7 @@ void init_chain()
 	fir_set_params.coeff_by_params.fc = 6000;
 	fir_set_params.coeff_by_params.dfc = 1000;
 	fir_set_params.coeff_by_params.A_stop = 90;
-	fir_set_params.coeff_by_params.sample_rate = 48000;
+	fir_set_params.coeff_by_params.sample_rate_Hz = 48000;
 	fir_set_params.number_of_filter_coefficients = 25;//401;
 	fir_set_params.predefined_data_block_size = 128;
 	dsp_management_api_ioctl_1_params(pMain_dsp_chain, fir_filter,
