@@ -10,11 +10,6 @@ extern "C" {
 }
 
 
-static float mic_buff_left_x3[DSP_BUFF_SIZE * 3];
-static float mic_buff_right_x3[DSP_BUFF_SIZE * 3];
-static float playback_buff_left_x3[DSP_BUFF_SIZE * 3];
-static float playback_buff_right_x3[DSP_BUFF_SIZE * 3];
-
 static float mic_buff_left[DSP_BUFF_SIZE];
 static float mic_buff_right[DSP_BUFF_SIZE];
 static float playback_buff_left[DSP_BUFF_SIZE];
@@ -30,6 +25,7 @@ static float output_buff_right[DSP_BUFF_SIZE];
 uint8_t zero_buff_for_DSP_chain[ZERO_BUFF_SIZE_FOR_DSP_CHAIN];
 uint8_t dummy_buff_for_DSP_chain[DUMMY_BUFF_SIZE_FOR_DSP_CHAIN];
 
+static int downsample_factor;
 
 void MainComponent::init_audio_processing()
 {
@@ -38,21 +34,7 @@ void MainComponent::init_audio_processing()
 			dummy_buff_for_DSP_chain, DUMMY_BUFF_SIZE_FOR_DSP_CHAIN);
 	init_chain();
 	record_sample_rate = 16000;
-}
-
-
-// TODO: add correct downsampling
-static void downsampling()
-{
-	size_t i;
-
-	for(i = 0; i < DSP_BUFF_SIZE; i++)
-	{
-		mic_buff_left[i] = mic_buff_left_x3[i * 3];
-		mic_buff_right[i] = mic_buff_right_x3[i * 3];
-		playback_buff_left[i] = playback_buff_left_x3[i * 3];
-		playback_buff_right[i] = playback_buff_right_x3[i * 3];
-	}
+	downsample_factor = 48000 / record_sample_rate;
 }
 
 
@@ -62,7 +44,7 @@ uint8_t MainComponent::get_buffers_for_processing()
 	size_t curr_samples_to_copy;
 	size_t curr_dest_buff_pos;
 
-	samples_to_copy = DSP_BUFF_SIZE * 3;
+	samples_to_copy = DSP_BUFF_SIZE;
 	if (samples_to_copy > valid_data_in_input_buffer)
 	{
 		return 0;// not enough data in buffer
@@ -90,16 +72,16 @@ uint8_t MainComponent::get_buffers_for_processing()
 			curr_samples_to_copy = samples_to_copy;
 		}
 
-		memcpy(&mic_buff_left_x3[curr_dest_buff_pos],
+		memcpy(&mic_buff_left[curr_dest_buff_pos],
 				&mic_buff_left_cyclic[in_audio_read_pointer],
 				curr_samples_to_copy * sizeof(float));
-		memcpy(&mic_buff_right_x3[curr_dest_buff_pos],
+		memcpy(&mic_buff_right[curr_dest_buff_pos],
 				&mic_buff_right_cyclic[in_audio_read_pointer],
 				curr_samples_to_copy * sizeof(float));
-		memcpy(&playback_buff_left_x3[curr_dest_buff_pos],
+		memcpy(&playback_buff_left[curr_dest_buff_pos],
 				&playback_buff_left_cyclic[in_audio_read_pointer],
 				curr_samples_to_copy * sizeof(float));
-		memcpy(&playback_buff_right_x3[curr_dest_buff_pos],
+		memcpy(&playback_buff_right[curr_dest_buff_pos],
 				&playback_buff_right_cyclic[in_audio_read_pointer],
 				curr_samples_to_copy * sizeof(float));
 
@@ -109,8 +91,6 @@ uint8_t MainComponent::get_buffers_for_processing()
 		valid_data_in_input_buffer -= curr_samples_to_copy;
 		samples_to_copy -= curr_samples_to_copy;
 	}
-
-	downsampling();
 	return 1;
 }
 
@@ -121,11 +101,13 @@ void MainComponent::process_audio(
 		size_t *samples_to_record)
 {
 	uint8_t data_is_valid_for_proccessing;
+	size_t rec_num_of_samples;
 
 	data_is_valid_for_proccessing = get_buffers_for_processing();
 
 	if (0 == data_is_valid_for_proccessing) return;
-#if 1
+
+	rec_num_of_samples = DSP_BUFF_SIZE / downsample_factor;
 
 	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(0),
 					(uint8_t *)mic_buff_left, DSP_BUFF_SIZE * sizeof(float));
@@ -136,12 +118,12 @@ void MainComponent::process_audio(
 	dsp_management_api_set_chain_input_buffer(pMain_dsp_chain, IN_PAD(3),
 				(uint8_t *)playback_buff_right, DSP_BUFF_SIZE * sizeof(float));
 	dsp_management_api_set_chain_output_buffer(pMain_dsp_chain, OUT_PAD(0),
-				(uint8_t *)output_buff_left, DSP_BUFF_SIZE * sizeof(float));
+				(uint8_t *)output_buff_left, rec_num_of_samples * sizeof(float));
 	dsp_management_api_set_chain_output_buffer(pMain_dsp_chain, OUT_PAD(1),
-				(uint8_t *)output_buff_right, DSP_BUFF_SIZE * sizeof(float));
+			(uint8_t *)output_buff_right, rec_num_of_samples * sizeof(float));
 	dsp_management_api_process_chain(pMain_dsp_chain);
-#endif
+
 	*left_buff_to_record = output_buff_left;
 	*right_buff_to_record = output_buff_right;
-	*samples_to_record = DSP_BUFF_SIZE;
+	*samples_to_record = rec_num_of_samples;
 }
