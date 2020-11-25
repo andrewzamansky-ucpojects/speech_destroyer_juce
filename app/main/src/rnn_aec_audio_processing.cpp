@@ -34,6 +34,9 @@ void MainComponent::init_audio_processing()
 			dummy_buff_for_DSP_chain, DUMMY_BUFF_SIZE_FOR_DSP_CHAIN);
 	init_chain();
 	record_sample_rate = 16000;
+#ifdef UPSAMPLE_OUTPUT_TO_48000
+	record_sample_rate = 48000;
+#endif
 	downsample_factor = 48000 / record_sample_rate;
 }
 
