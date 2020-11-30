@@ -71,7 +71,7 @@ void init_chain()
 			IOCTL_UPSAMPLING_BY_INT_SET_PARAMS, &upsample_set_params);
 #endif
 
-	gain = 6.0f; // 0 - no gain
+	gain = 12.0f; // 0 - no gain
 	dsp_management_api_ioctl_1_params(pMain_dsp_chain, rnn_gain,
 			IOCTL_MULTIPLIER_SET_WEIGHT_DB, &gain );
 

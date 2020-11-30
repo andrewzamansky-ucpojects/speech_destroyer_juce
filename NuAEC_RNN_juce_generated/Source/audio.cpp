@@ -3,12 +3,15 @@
 extern "C" {
 	#include "auto_init_api.h"
 	#include "dsp_management_api.h"
+	#include "cyclic_buffer_api.h"
 
 	void init_chain();
 	extern struct dsp_chain_t *pMain_dsp_chain;
 
 }
 
+extern cyclic_buffer_t  mic_cyclic_buffer_left;
+extern cyclic_buffer_t  mic_cyclic_buffer_right;
 
 static size_t zero_buff_size = 0;
 static float *zero_buff = NULL;
@@ -223,75 +226,6 @@ void get_output_buffer_pointers(AudioDeviceManager *deviceManager,
 }
 
 
-void MainComponent::add_new_input_buffers(size_t num_of_samples,
-		const float *new_buf_left, const float *new_buf_right,
-		uint8_t updating_playback_buffers)
-{
-	size_t samples_to_write;
-	size_t free_space_in_buffer;
-	size_t tmp_in_audio_write_pointer;
-	size_t tmp_valid_data_in_input_buffer;
-
-	tmp_in_audio_write_pointer = in_audio_write_pointer;
-	tmp_valid_data_in_input_buffer = valid_data_in_input_buffer;
-	while (num_of_samples)
-	{
-		free_space_in_buffer = CYCLIC_BUFF_SIZE - tmp_valid_data_in_input_buffer;
-		if (0 == free_space_in_buffer)
-		{
-			//TODO: report overflow
-			return;
-		}
-
-		if (tmp_in_audio_write_pointer >= in_audio_read_pointer)
-		{
-			samples_to_write = CYCLIC_BUFF_SIZE - tmp_in_audio_write_pointer;
-		}
-		else
-		{
-			samples_to_write = in_audio_read_pointer - tmp_in_audio_write_pointer;
-		}
-
-		if (num_of_samples < samples_to_write)
-		{
-			samples_to_write = num_of_samples;
-		}
-		if (free_space_in_buffer < samples_to_write)
-		{
-			samples_to_write = free_space_in_buffer;
-		}
-
-		if (0 == updating_playback_buffers)
-		{
-			memcpy(&mic_buff_left_cyclic[tmp_in_audio_write_pointer],
-						new_buf_left, samples_to_write * sizeof(float));
-			memcpy(&mic_buff_right_cyclic[tmp_in_audio_write_pointer],
-						new_buf_right, samples_to_write * sizeof(float));
-		}
-		else
-		{
-			memcpy(&playback_buff_left_cyclic[tmp_in_audio_write_pointer],
-						new_buf_left, samples_to_write * sizeof(float));
-			memcpy(&playback_buff_right_cyclic[tmp_in_audio_write_pointer],
-						new_buf_right, samples_to_write * sizeof(float));
-		}
-
-		tmp_in_audio_write_pointer =
-			(tmp_in_audio_write_pointer + samples_to_write) % CYCLIC_BUFF_SIZE;
-		tmp_valid_data_in_input_buffer += samples_to_write;
-		num_of_samples -= samples_to_write;
-		new_buf_left += samples_to_write;
-		new_buf_right += samples_to_write;
-	}
-	if (updating_playback_buffers)
-	{
-		in_audio_write_pointer = tmp_in_audio_write_pointer;
-		valid_data_in_input_buffer = tmp_valid_data_in_input_buffer;
-	}
-}
-
-
-
 void MainComponent::do_record(float *left_buff_to_record,
 			float *right_buff_to_record, size_t samples_to_record)
 {
@@ -322,8 +256,6 @@ void MainComponent::do_record(float *left_buff_to_record,
 }
 
 
-extern void process_audio(const juce::AudioSourceChannelInfo& bufferToFill);
-
 void MainComponent::getNextAudioBlock(
 		const juce::AudioSourceChannelInfo& bufferToFill)
 {
@@ -345,9 +277,26 @@ void MainComponent::getNextAudioBlock(
 	if ((enable_audio_process) &&
 			(true == device->isOpen()) && (48000 == sample_rate ))
 	{
+		size_t test_num_of_samples;
+
+		// extrac mic signal here because playback will override it
 		get_input_buffer_pointers(
 			&deviceManager, bufferToFill, &new_mic_left, &new_mic_right);
-		add_new_input_buffers(num_of_samples, new_mic_left, new_mic_right, 0);
+
+		test_num_of_samples = cyclic_buffer_add_items(
+				mic_cyclic_buffer_left, new_mic_left, num_of_samples);
+		if (test_num_of_samples != num_of_samples)
+		{
+			CRITICAL_ERROR(
+					"cannot put requested mic_L samples to cyclic buffer");
+		}
+		test_num_of_samples = cyclic_buffer_add_items(
+				mic_cyclic_buffer_right, new_mic_right, num_of_samples);
+		if (test_num_of_samples != num_of_samples)
+		{
+			CRITICAL_ERROR(
+					"cannot put requested mic_R samples to cyclic buffer");
+		}
 	}
 
 	if ((error_state) || (readerSource.get() == nullptr))
@@ -357,7 +306,7 @@ void MainComponent::getNextAudioBlock(
 	}
 	else
 	{
-		transportSource.getNextAudioBlock (bufferToFill);
+		transportSource.getNextAudioBlock(bufferToFill);
 	}
 
 	if (0 == enable_audio_process) return;
@@ -366,10 +315,9 @@ void MainComponent::getNextAudioBlock(
 
 	get_output_buffer_pointers(&deviceManager, bufferToFill,
 								&new_playback_left, &new_playback_right);
-	add_new_input_buffers(
-			num_of_samples, new_playback_left, new_playback_right, 1);
 	process_audio(
-			&left_buff_to_record, &right_buff_to_record, &samples_to_record);
+			&left_buff_to_record, &right_buff_to_record, &samples_to_record,
+			new_playback_left, new_playback_right, num_of_samples);
 	do_record(left_buff_to_record, right_buff_to_record, samples_to_record);
 }
 
